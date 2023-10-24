@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "*.sgcll": "plaintext",
+        "windows.h": "c",
+        "glfw3.h": "c",
+        "wininet.h": "c"
+    }
+}
