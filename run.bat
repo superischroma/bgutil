@@ -1,1 +1,1 @@
-"target/debug/bgutil"
+"target/debug/bum"

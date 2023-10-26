@@ -9,7 +9,7 @@ pub fn send_notification(process: &str, message: &str)
         .summary(process)
         .body(message)
         .icon(format!("{}\\icon.ico", std::env::current_exe().unwrap().parent().unwrap().to_str().unwrap()).as_str())
-        .appname("bgutil")
+        .appname("bum")
         .show().unwrap();
     let mut file = OpenOptions::new()
         .append(true)
