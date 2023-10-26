@@ -1,10 +1,10 @@
 use chrono::{DateTime, Local};
 //use chrono::Utc;
-use std::{thread, io::Write, time::{SystemTime, Duration}, collections::HashMap};
+use std::{io::Write, time::{SystemTime, Duration}, collections::HashMap};
 
 use json::JsonValue;
 
-use crate::front;
+use crate::{front, ThreadState};
 
 const PERIOD: u64 = 1;
 const DAY: u64 = 8.64e7 as u64;
@@ -43,9 +43,9 @@ fn wait(secs: u64)
         //let dt_next_update = DateTime::<Local>::from(next_update);
         //let ts_next_update = dt_next_update.format("%r").to_string();
         //println!("{} left until next update ({})", ts_time_diff, ts_next_update);
-        thread::sleep(Duration::from_secs(10));
+        std::thread::sleep(Duration::from_secs(10));
     }
-    thread::sleep(Duration::from_secs(5));
+    std::thread::sleep(Duration::from_secs(5));
 }
 
 fn send_notification(message: &str)
@@ -53,9 +53,9 @@ fn send_notification(message: &str)
     front::send_notification("Item Tracker", message)
 }
 
-fn run()
+fn run(_sender: &std::sync::mpsc::Sender<ThreadState>)
 {
-    thread::sleep(Duration::from_secs(20)); // wait a lil
+    std::thread::sleep(Duration::from_secs(20)); // wait a lil
     let mut items: HashMap<&str, Vec<u64>> = HashMap::from([
         ("Ender Artifact", vec![]),
         ("Bedrock", vec![])
@@ -122,7 +122,7 @@ fn run()
                 send_notification(format!("{}: {} coins", item_name, coins).as_str());
             }
             bids.clear();
-            thread::sleep(Duration::from_secs(5));
+            std::thread::sleep(Duration::from_secs(5));
         }
         let next_update = SystemTime::now() + Duration::from_secs(3600);
         let dt_next_update = DateTime::<Local>::from(next_update);
@@ -132,9 +132,9 @@ fn run()
     }
 }
 
-pub fn start_process()
+pub fn start_process(tx: &std::sync::mpsc::Sender<ThreadState>)
 {
-    thread::spawn(run);
+    std::thread::spawn(|| run(tx));
 }
 
 pub fn edit()
