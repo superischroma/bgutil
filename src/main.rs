@@ -16,8 +16,8 @@ const VERSION: &str = "1.0";
 fn main()
 {
     let (tx, rx) = std::sync::mpsc::channel::<ThreadState>();
-    itemtracker::start_process(&tx);
-    tray::start_process(&tx);
+    itemtracker::start_process(tx.clone());
+    tray::start_process(tx.clone());
     send_notification("Core", format!("Background Utility Modules v{} initialized", VERSION).as_str());
     loop
     {

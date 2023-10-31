@@ -1,20 +1,18 @@
 use tray_item::{TrayItem, IconSource};
 
-use crate::{ThreadState, VERSION};
+use crate::{ThreadState, VERSION, itemtracker};
 
-pub fn start_process(tx: &std::sync::mpsc::Sender<ThreadState>)
+pub fn start_process(tx: std::sync::mpsc::Sender<ThreadState>)
 {
-    std::thread::spawn(|| run(tx));
+    std::thread::spawn(move || run(tx));
 }
 
-fn run(sender: &std::sync::mpsc::Sender<ThreadState>)
+fn run(sender: std::sync::mpsc::Sender<ThreadState>)
 {
     let mut tray = TrayItem::new("BUM", IconSource::Resource("tray-default")).unwrap();
     tray.add_label(format!("BUM v{}", VERSION).as_str()).unwrap();
 
-    tray.add_menu_item("Item Tracker", || {
-        println!("not dun yet");
-    }).unwrap();
+    tray.add_menu_item("Item Tracker", itemtracker::edit).unwrap();
 
     tray.inner_mut().add_separator().unwrap();
 

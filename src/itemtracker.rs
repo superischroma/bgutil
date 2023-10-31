@@ -5,8 +5,23 @@ use std::{io::Write, time::{SystemTime, Duration}, collections::HashMap};
 use json::JsonValue;
 
 use crate::{front, ThreadState};
+/*
+struct LocalConfig
+{
+    period: u64,
+    items: Vec<String>,
+}
 
-const PERIOD: u64 = 1;
+impl LocalConfig
+{
+    fn new(period: u64, items: Vec<String>) -> LocalConfig
+    {
+        LocalConfig { period, items }
+    }
+}
+*/
+
+const PERIOD: u64 = 7;
 const DAY: u64 = 8.64e7 as u64;
 
 fn req_ah(page: u32) -> Option<JsonValue>
@@ -53,10 +68,10 @@ fn send_notification(message: &str)
     front::send_notification("Item Tracker", message)
 }
 
-fn run(_sender: &std::sync::mpsc::Sender<ThreadState>)
+fn run(_sender: std::sync::mpsc::Sender<ThreadState>)
 {
     std::thread::sleep(Duration::from_secs(20)); // wait a lil
-    let mut items: HashMap<&str, Vec<u64>> = HashMap::from([
+    let mut items: HashMap<&str, Vec<i64>> = HashMap::from([
         ("Ender Artifact", vec![]),
         ("Bedrock", vec![])
     ]);
@@ -97,7 +112,7 @@ fn run(_sender: &std::sync::mpsc::Sender<ThreadState>)
                 let item_name = auction["item_name"].as_str().unwrap();
                 if items.contains_key(item_name)
                 {
-                    items.get_mut(item_name).unwrap().push(auction["starting_bid"].as_u64().unwrap());
+                    items.get_mut(item_name).unwrap().push(auction["starting_bid"].as_i64().unwrap());
                 }
             }
         }
@@ -115,9 +130,9 @@ fn run(_sender: &std::sync::mpsc::Sender<ThreadState>)
                 let q1 = bids[(bids.len() as f64 * 0.25) as usize];
                 let q3 = bids[(bids.len() as f64 * 0.75) as usize];
                 let iqr = (q3 - q1) as f64;
-                let filtered: Vec<u64> = bids.clone().into_iter().filter(|&i| i > q1 - (iqr * 1.5) as u64 && i < q3 + (iqr * 1.5) as u64).collect();
+                let filtered: Vec<i64> = bids.clone().into_iter().filter(|&i| i > q1 - (iqr * 1.5) as i64 && i < q3 + (iqr * 1.5) as i64).collect();
                 let fin = if filtered.len() != 0 { filtered } else { bids.to_vec() };
-                let sum: u64 = fin.iter().sum();
+                let sum: i64 = fin.iter().sum();
                 let coins = (sum as f64 / fin.len() as f64).round().to_string().as_bytes().rchunks(3).rev().map(std::str::from_utf8).collect::<Result<Vec<&str>, _>>().unwrap().join(",");
                 send_notification(format!("{}: {} coins", item_name, coins).as_str());
             }
@@ -132,17 +147,53 @@ fn run(_sender: &std::sync::mpsc::Sender<ThreadState>)
     }
 }
 
-pub fn start_process(tx: &std::sync::mpsc::Sender<ThreadState>)
+/*
+fn init_config() -> LocalConfig
 {
-    std::thread::spawn(|| run(tx));
+    let default_object = object! {
+        period: 1,
+        items: []
+    };
+    let raw_contents = std::fs::read_to_string(Path::new(format!("{}\\config\\itemtracker.json", std::env::current_exe().unwrap().parent().unwrap().to_str().unwrap()).as_str())).unwrap();
+    let parse_result = json::parse(raw_contents.as_str());
+    let config_obj = if parse_result.is_err()
+    {
+        default_object.clone()
+    }
+    else
+    {
+        let mut found = parse_result.unwrap();
+        for entry in default_object.entries()
+        {
+            if !found.has_key(entry.0)
+            {
+                found = default_object.clone();
+                break;
+            }
+        }
+        found
+    };
+    LocalConfig::new(config_obj["period"].as_u64().unwrap(), config_obj["items"].members().into_iter().map(|item| String::from(item.as_str().unwrap())).collect::<Vec<String>>())
+}
+
+fn save_config()
+{
+
+}
+*/
+
+pub fn start_process(tx: std::sync::mpsc::Sender<ThreadState>)
+{
+    //let mut config = init_config();
+    std::thread::spawn(move || run(tx));
 }
 
 pub fn edit()
 {
     loop
     {
-        println!("-- Edit Item Tracker --");
-        println!("[1] Return");
+        println!("-- Item Tracker --");
+        println!("[1] Close");
         print!(">> ");
         std::io::stdout().flush().unwrap();
         let mut input = String::new();
